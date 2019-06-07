@@ -1,0 +1,6 @@
+#! /usr/bin/env python3
+
+import n2kparser
+
+if __name__ == "__main__":
+    n2kparser.main()
