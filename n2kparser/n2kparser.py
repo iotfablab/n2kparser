@@ -11,7 +11,7 @@ import logging
 
 from influxdb import InfluxDBClient
 
-
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -99,9 +99,9 @@ def main():
         analyzer_process.wait()
         reader.join()
     except KeyboardInterrupt:
-        os.kill(os.getpid(analyzer_process.pid), signal.SIGTERM)
-        os.kill(os.getpid(actisense_process.pid), signal.SIGTERM)
         logger.exception('CTRL+C Hit.')
+        os.kill(analyzer_process.pid, signal.SIGTERM)
+        os.kill(actisense_process.pid, signal.SIGTERM)
         sys.exit(0)
     
     except Exception as e:
