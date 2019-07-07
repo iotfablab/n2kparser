@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='n2kparser',
-    version=1.1,
+    version=1.2,
     description='Extract values from Actisense-Serial PGNs and save them to InfluxDB',
     url='https://github.com/iotfablab/n2kparser',
     author='Shantanoo Desai',
