@@ -1,0 +1,67 @@
+{
+    "n2k": {
+        "port": "/dev/ttymxc2",
+        "baudrate": 115200,
+        "dbConf": {
+             "udp_port": 8093
+        },
+        "pgnConfigs": {
+          "127250": [
+            {
+              "code": "vessel-heading",
+              "label": "Vessel Heading",
+              "fieldLabel": "Heading",
+              "samplingrate": 500
+            },
+            {
+              "code": "vessel-hdg-dev",
+              "label": "Vessel Heading Deviation",
+              "fieldLabel": "Deviation",
+              "samplingrate": 500
+            },
+            {
+             "code": "vessel-hdg-var",
+             "label": "Vessel Heading Variation",
+             "fieldLabel": "Variation",
+             "samplingrate": 500
+            }
+          ],
+          "130306": [
+            {
+              "code": "wind-spd",
+              "label": "Wind Speed",
+              "fieldLabel": "Wind Speed",
+              "samplingrate": 500
+            },
+            {
+               "code": "wind-angle",
+               "label": "Wind Angle",
+               "fieldLabel": "Wind Angle",
+               "samplingrate": 500
+            }
+          ],
+          "129026":[
+           {
+            "code": "cog",
+            "label": "COG",
+            "fieldLabel": "COG",
+            "samplingrate": 500
+           },
+           {
+            "code": "sog",
+            "label": "SOG",
+            "fieldLabel": "SOG",
+            "samplingrate": 500
+           }
+          ],
+          "127251": [
+           {
+            "code": "rateOfTurn",
+            "label": "Rate Of Turn",
+            "fieldLabel": "Rate",
+            "samplingrate": 500
+           }
+          ]
+        }
+    }
+}
