@@ -8,6 +8,7 @@ import threading
 import time
 import signal
 import logging
+import argparse
 
 from influxdb import InfluxDBClient
 
@@ -25,89 +26,95 @@ logger.addHandler(handler)
 # n2k configuration JSON file
 CONF = dict()
 # CONF File Path
-CONF_PATH = '/etc/umg/conf.json'
+CONF_PATH = ''
 
-# InfluxDB Client
-client = InfluxDBClient(host='localhost', port=8086, use_udp=True, udp_port=8093)
-
-# Actisense-Serial
-actisense_process = Popen(['actisense-serial', '-r', '/dev/ttymxc2'],stdout=PIPE)
-
-# Analyzer Stream for output in JSON
-analyzer_process = Popen(['analyzer', '-json'],stdin=actisense_process.stdout, stdout=PIPE, stderr=PIPE)
-
-
-
-
-class ReaderThread(threading.Thread):
-
-     def __init__(self, stream):
-         threading.Thread.__init__(self)
-         self.stream = stream
-
-     def run(self):
-         logger.info('Starting Stream Reading for NMEA2000')
-         while True:
-             line = self.stream.readline().decode('utf-8')
-             if len(line) == 0:
-                 logger.info('Length of incoming data is 0')
-                 logger.debug(line)
-                 break
-             try:
-                 logger.info('Parsing the incoming JSON')
-                 n2k_dict = json.loads(line)
-             except Exception as e:
-                 logger.exception(e)
-                 logger.error('Exception during Parsing of incoming JSON')
-                 print(e)
-                 pass
-            
-             global CONF
-             if str(n2k_dict['pgn']) in list(CONF['pgnConfigs'].keys()):
-                for each_pgn_conf in CONF['pgnConfigs'][str(n2k_dict['pgn'])]:
-                    measurement = each_pgn_conf
-                    code = measurement['code']
-                    label = measurement['fieldLabel']
-                    value = n2k_dict['fields'][label]
-                    if 'source' in measurement:
-                        if measurement['source'] != n2k_dict['src']:
-                            break
-                    #if (not 'filterCode' in measurement or measurement['filterValue'] == n2k_dict[measurement['filterCode']]) and value:
-                    logger.info('Parsing data for: {}'.format(str(n2k_dict['pgn'])))
-                    logger.debug({'c': measurement['code'], 'v': value, 't': time.time()})
-                    db_packet = {"tags": {"type": "n2k"}, "time":time.time(), "points": [{"measurement": code, "fields": {"v": float(value), "status": 0}}]}
-                    #print(db_packet)
-                    logger.info('Sending data to InfluxDB')
-                    try:
-                        client.send_packet(db_packet)
-                    except Exception as e:
-                        logger.exception(e)
-                        print('Error during Sending data to InfluxDB')
-                        pass
-                    
-
-
-
-def main():
-    with open(CONF_PATH) as cFile:
-        _conf = json.load(cFile)
-    global CONF
-    CONF = _conf['n2k']
-    reader = ReaderThread(analyzer_process.stdout)
-    try:
-        reader.start()
-        analyzer_process.wait()
-        reader.join()
-    except KeyboardInterrupt:
-        logger.exception('CTRL+C Hit.')
-        os.kill(analyzer_process.pid, signal.SIGTERM)
-        os.kill(actisense_process.pid, signal.SIGTERM)
-        sys.exit(0)
-    
-    except Exception as e:
-        logger.exception(e)
-        pass
-
+def parse_args():
+    parser = argparse.ArgumentParser(description='CLI to store Actisense-NGT Gateway values to InfluxDB')
+    parser.add_argument('--path', type=str, required=False, default='/etc/umg/conf.json',
+                        help='Provide the path to the `conf.json` file for Script')
+    return parser.parse_args()
 
 if __name__ == '__main__':
-    main()
+
+    args = parse_args()
+    CONF_PATH = args.path
+    logger.debug('Conf File Path: {}'.format(CONF_PATH))
+    logger.info('Reading Configuration for NMEA2000')
+    with open(CONF_PATH) as cFile:
+        _conf = json.load(cFile)
+        CONF = _conf['n2k']
+    
+    # InfluxDB Client
+    client = InfluxDBClient(host='localhost', port=8086, use_udp=True, udp_port=CONF['dbConf']['udp_port'])
+
+    # Actisense-Serial
+    actisense_process = Popen(['actisense-serial', '-r', CONF['port']], stdout=PIPE)
+
+    # Analyzer Stream for output in JSON
+    analyzer_process = Popen(['analyzer', '-json'], stdin=actisense_process.stdout, stdout=PIPE, stderr=PIPE)
+
+    PGNs = list(map(int, CONF['pgnConfigs'].keys()))
+    # print(PGNs)
+    logger.debug('PGNs: {}'.format(PGNs))
+
+    while True:
+        incoming_json = analyzer_process.stdout.readline().decode('utf-8')
+        try:
+            incoming_data = json.loads(incoming_json)
+
+            if incoming_data['pgn'] in PGNs:
+
+                # remove unnecessary keys
+                del incoming_data['dst']
+                del incoming_data['prio']
+                
+                # empty influx json to send to DB
+                influx_frame = {
+                    'time': '',
+                    'tags': {},
+                    'points': []
+                }
+                
+                influx_frame['time'] = incoming_data['timestamp']
+
+                # Create a set of all available fields from the incoming frame
+                incoming_fields = set(incoming_data['fields'].keys())
+                fields_from_conf = set(CONF['pgnConfigs'][str(incoming_data['pgn'])]['fieldLabels'])
+                logger.debug('Fields To Log: {}'.format(fields_from_conf.intersection(incoming_fields)))
+                
+                # Get all the Fields necessary to be stored into InfluxDB
+                for selected_field in fields_from_conf.intersection(incoming_fields):
+                    point = {
+                        'measurement': incoming_data['description'].replace(" ", ""),
+                        'fields': {}
+                    }
+
+                    if type(incoming_data['fields'][selected_field]) is not str:
+                        # store numeric value as float
+                        point['fields'][selected_field] = float(incoming_data['fields'][selected_field])
+                    else:
+                        # store it as a string
+                        point['fields'][selected_field] = incoming_data['fields'][selected_field]
+                        
+                    point['fields']['status'] = 0.0
+                    
+                    influx_frame['points'].append(point)
+                
+                # check if the configuration for the PGN has the `fromSource` Key
+                if 'fromSource' in list(CONF['pgnConfigs'][str(incoming_data['pgn'])].keys()):
+                    logger.info('PGN Source Filter Check')
+                    if incoming_data['src'] == CONF['pgnConfigs'][str(incoming_data['pgn'])]['fromSource']:
+                        logger.info('PGN: {} with src: {}'.format(incoming_data['pgn'], incoming_data['src']))
+                        client.send_packet(influx_frame)
+                else:
+                    client.send_packet(influx_frame)
+                logger.info('Packet Sent for PGN: {}, {}'.format(incoming_data['pgn'], incoming_data['description']))
+
+        except Exception as e:
+            logger.exception(e)
+
+        except KeyboardInterrupt:
+            logger.exception('CTRL + C pressed')
+            analyzer_process.stdout.flush()
+            analyzer_process.terminate()
+            analyzer_process.wait()
