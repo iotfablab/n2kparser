@@ -23,48 +23,50 @@ activate the virtual environment and then
 
 
 ## Usage
-
-You can change the path using the `CONF_PATH` variable in `n2kparser.py` to use the configuration JSON file.
+Path to the `conf.json` (see File in repository for Structure) can be set via argument `--path`
 
 ### Configuration File
 
-    $ n2kparser
+    $ n2kparser --path ./conf.json
 
-Many things are currently hardcoded in the script like serial port and udp port for InfluxDB.
-
-The PGNs are configuration via the `conf.json` file in the repository.
+The PGNs are configurable via the `conf.json` file in the repository. Follow the structure mentioned in the file.
 
 A snippet of the PGN is as follows:
 
 ```
 "pgnConfigs": {
-          "127250": [
-            {
-              "code": "vessel-heading",
-              "label": "Vessel Heading",
-              "fieldLabel": "Heading",
-              "samplingrate": 500
-            },
-            {
-              "code": "vessel-hdg-dev",
-              "label": "Vessel Heading Deviation",
-              "fieldLabel": "Deviation",
-              "samplingrate": 500
-            },
-            {
-             "code": "vessel-hdg-var",
-             "label": "Vessel Heading Variation",
-             "fieldLabel": "Variation",
-             "samplingrate": 500
-            }
-          ]
+      "130311": {
+        "for": "Environmental Parameters",
+        "fieldLabels": [
+          "Temperature",
+          "Atmospheric Pressure"
+        ]
+      },
+      "127245": {
+        "for": "Rudder",
+        "fieldLabels": [
+          "Direction Order",
+          "Position"
+        ]
+      },
+      "127501": {
+        "for": "Binary Switch Bank",
+        "fromSource": 1,
+        "fieldLabels": [
+          "Indicator1",
+          "Indicator2"
+        ]
+      }
 }
 ```
-* A single PGN can measure a different values
-* `code`: here is the name of the measurement in InfluxDB where the data will be stored
-* `label`: is a human-readable name of the measurement. It does not get used in the code but only for understanding
-* `fieldLabel`: is the key in the sub-JSON of the incoming data whose value needs to be stored in InfluxDB
-* `samplingrate`: is also for understanding only and is not used within the code
+__NOTE__: A single PGN can measure a different values
+* `for` key is for Human-Readable Description for the PGN. (Optional)
+* `fieldLabels` key is an array of all the relevant keys for which the values should be saved
+  to InfluxDB. Example, for Rudder (same PGN) one can choose to store only `Position` value or
+  both `Direction Order` and `Position` (Required)
+* `fromSource` keys is a filter key to store information from only distinct source (e.g. Engine, Rudder).
+  If there are two Engines/Rudders and the value of Engine/Rudder 1 is to be stored then use `fromSource: 1`.
+  (Optional)
 
 ## Maintainer
 
