@@ -34,8 +34,7 @@ def parse_args():
                         help='Provide the path to the `conf.json` file for Script')
     return parser.parse_args()
 
-if __name__ == '__main__':
-
+def main():
     args = parse_args()
     CONF_PATH = args.path
     logger.debug('Conf File Path: {}'.format(CONF_PATH))
@@ -118,3 +117,6 @@ if __name__ == '__main__':
             analyzer_process.stdout.flush()
             analyzer_process.terminate()
             analyzer_process.wait()
+
+if __name__ == '__main__':
+    main()
