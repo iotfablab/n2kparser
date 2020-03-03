@@ -5,7 +5,7 @@
     "port": 8086
   },
   "mqtt": {
-    "broker": "docker.ikap.biba.uni-bremen.de",
+    "broker": "localhost",
     "port": 1883
   },
   "n2k": {
