@@ -23,40 +23,49 @@ activate the virtual environment and then
 
 
 ## Usage
-Path to the `conf.json` (see File in repository for Structure) can be set via argument `--path`
+Path to the `conf.json` (see File in repository for Structure) can be set via argument `--config`
 
 ### Configuration File
 
-    $ n2kparser --path ./conf.json
+    $ n2kparser --config ./conf.json
 
 The PGNs are configurable via the `conf.json` file in the repository. Follow the structure mentioned in the file.
 
 A snippet of the PGN is as follows:
 
-```
+```json
 "pgnConfigs": {
-      "130311": {
-        "for": "Environmental Parameters",
-        "fieldLabels": [
-          "Temperature",
-          "Atmospheric Pressure"
-        ]
-      },
-      "127245": {
-        "for": "Rudder",
-        "fieldLabels": [
-          "Direction Order",
-          "Position"
-        ]
-      },
-      "127501": {
-        "for": "Binary Switch Bank",
-        "fromSource": 1,
-        "fieldLabels": [
-          "Indicator1",
-          "Indicator2"
-        ]
-      }
+  "130311": {
+    "for": "Environmental Parameters",
+    "fieldLabels": [
+      "Temperature",
+      "Atmospheric Pressure"
+    ],
+    "topics": [
+      "environment/nmea2k/temperature",
+      "environment/nmea2k/pressure"
+    ]
+  },
+  "127250": {
+    "for": "Vessel Heading",
+    "fieldLabels": [
+      "Heading"
+    ],
+    "topics": [
+      "control/nmea2k/heading"
+    ]
+  },
+    "127501": {
+    "for": "Binary Switch Bank",
+    "fromSource": 1,
+    "fieldLabels": [
+      "Indicator1",
+      "Indicator2"
+    ],
+    "topics": [
+      "input/nmea2k/switchbank"
+    ]
+  }
 }
 ```
 __NOTE__: A single PGN can measure a different values
@@ -67,6 +76,14 @@ __NOTE__: A single PGN can measure a different values
 * `fromSource` keys is a filter key to store information from only distinct source (e.g. Engine, Rudder).
   If there are two Engines/Rudders and the value of Engine/Rudder 1 is to be stored then use `fromSource: 1`.
   (Optional)
+* `topics`: A list of topics that are combined with `deviceID` and published in accordance with the `fieldLabels` (Required)
+
+
+### Topics
+
+    <DeviceID>/<Profile>/<Source>/<Measurement>
+  
+  the payload is in the form of line protocol strings for each `topic`
 
 ## Maintainer
 
