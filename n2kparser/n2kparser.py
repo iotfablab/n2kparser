@@ -6,7 +6,6 @@ import os
 import json
 import concurrent.futures
 import time
-import signal
 import logging
 import argparse
 
@@ -29,6 +28,7 @@ n2k_conf = dict()
 mqtt_conf = dict()
 analyzer_process = None
 
+
 def save_to_db(measurments):
     """ Save NMEA2000 values to InfluxDB"""
     global client
@@ -42,7 +42,7 @@ def save_to_db(measurments):
 
 def publish_data(pgn_value, lineprotocol_data):
     lp_array = lineprotocol_data.split('\n')
-    lp_array.pop() # remove last newline
+    lp_array.pop()  # remove last newline
     publish_msgs = []
     global n2k_conf
     global mqtt_conf
@@ -65,8 +65,6 @@ def publish_data(pgn_value, lineprotocol_data):
     except Exception as e:
         logger.error('Publish Error: {}'.format(e))
         return False
-        
-
 
 
 def read_nmea2k():
@@ -89,7 +87,7 @@ def read_nmea2k():
                 # remove unnecessary keys
                 del incoming_data['dst']
                 del incoming_data['prio']
-                
+
                 # check if the configuration for the PGN has the `fromSource` Key
                 if 'fromSource' in list(n2k_conf['pgnConfigs'][str(incoming_data['pgn'])].keys()):
                     logger.info('PGN Source Filter Check')
@@ -97,7 +95,7 @@ def read_nmea2k():
                         logger.info('PGN: {} with src: {}'.format(incoming_data['pgn'], incoming_data['src']))
                         logger.info('Skipping data for: {}'.format(incoming_data['description']))
                         continue
-                
+
                 measurement = {
                     "tags": {
                         "source": "nmea2k",
@@ -111,7 +109,7 @@ def read_nmea2k():
                 incoming_fields = set(incoming_data['fields'].keys())
                 fields_from_conf = set(n2k_conf['pgnConfigs'][str(incoming_data['pgn'])]['fieldLabels'])
                 logger.debug('Fields To Log: {f}'.format(f=fields_from_conf.intersection(incoming_fields)))
-                
+
                 # Get all the Fields necessary to be stored into InfluxDB
                 for selected_field in fields_from_conf.intersection(incoming_fields):
                     # Measurement name is the profile type name e.g. control/environment/engine etc available
@@ -160,6 +158,7 @@ def parse_args():
     parser.add_argument('--config', type=str, required=True, help='Provide the configuration conf.json file with path')
     return parser.parse_args()
 
+
 def main():
     """Step ups for Clients and Configuration """
     args = parse_args()
@@ -173,7 +172,7 @@ def main():
 
     global mqtt_conf
     mqtt_conf = CONF['mqtt']
-    
+
     logger.info('Creating InfluxDB client')
     logger.debug('Client for {h}@{p} with udp:{ud}'.format(h=influx_conf['host'], p=influx_conf['port'], ud=n2k_conf['udp_port']))
     global client
@@ -193,9 +192,9 @@ def main():
         logger.error(connect_e)
         client.close()
         sys.exit(1)
-   
+
     try:
-       read_nmea2k()
+        read_nmea2k()
     except KeyboardInterrupt:
         print('CTRL+C pressed for script')
         analyzer_process.stdout.flush()
