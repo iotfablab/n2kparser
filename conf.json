@@ -1,16 +1,53 @@
 {
+  "deviceID": "UMG/0001",
+  "influx": {
+    "host": "localhost",
+    "port": 8086
+  },
+  "mqtt": {
+    "broker": "docker.ikap.biba.uni-bremen.de",
+    "port": 1883
+  },
   "n2k": {
     "port": "/dev/ttyS10",
     "baudrate": 115200,
-    "dbConf": {
-      "udp_port": 8093
-    },
+    "udp_port": 8095,
     "pgnConfigs": {
       "130311": {
         "for": "Environmental Parameters",
         "fieldLabels": [
           "Temperature",
           "Atmospheric Pressure"
+        ],
+        "topics": [
+          "environment/nmea2k/temperature",
+          "environment/nmea2k/pressure"
+        ]
+      },
+      "127250": {
+        "for": "Vessel Heading",
+        "fieldLabels": [
+          "Heading"
+        ],
+        "topics": [
+          "control/nmea2k/heading"
+        ]
+      },
+      "127251": {
+        "for": "Rate of Turn",
+        "fieldLabels": [
+          "control/nmea2k/rateOfTurn"
+        ]
+      },
+      "129025": {
+        "for": "GPS Navigation",
+        "fieldLabels": [
+          "Latitude",
+          "Longitude"
+        ],
+        "topics": [
+          "location/nmea2k/latitude",
+          "location/nmea2k/longitude"
         ]
       },
       "127245": {
@@ -18,6 +55,9 @@
         "fieldLabels": [
           "Direction Order",
           "Position"
+        ],
+        "topics": [
+          "control/nmea2k/rudder"
         ]
       },
       "127501": {
@@ -26,6 +66,55 @@
         "fieldLabels": [
           "Indicator1",
           "Indicator2"
+        ],
+        "topics": [
+          "input/nmea2k/switchbank"
+        ]
+      },
+      "127488": {
+        "for": "Engine Speed",
+        "fieldLabel": [
+          "Engine Speed"
+        ],
+        "topics": [
+          "engine/nmea2k/speed"
+        ]
+      },
+      "127489": {
+        "for": "Engine Parameters",
+        "fieldLabels": [
+          "Engine oil pressure",
+          "Engine temp.",
+          "Fuel rate"
+        ],
+        "topics": [
+          "engine/nmea2k/oilPressure",
+          "engine/nmea2k/temperature",
+          "engine/nmea2k/fuelRate"
+        ]
+      },
+      "129026": {
+        "for": "SOG/COG",
+        "fieldLabels": [
+          "SOG",
+          "COG"
+        ],
+        "topics": [
+          "groundVelocity/nmea2k/sog",
+          "groundVelocity/nmea2k/cog"
+        ]
+      },
+      "127257": {
+        "for": "Attitude(Yaw,Pitch,Roll)",
+        "fieldLabels": [
+          "Yaw",
+          "Pitch",
+          "Roll"
+        ],
+        "topics": [
+          "orientation/nmea2k/yaw",
+          "orientation/nmea2k/pitch",
+          "orientation/nmea2k/roll"
         ]
       }
     }
